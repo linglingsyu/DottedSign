@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Gen Jyuu Gothic P', sans-serif;
+    line-height: 1.25;
+    background: #333333;
+  }
+}
+
+@layer components {
+  .content_shadow {
+    box-shadow: inset 0px 2px 4px rgba(135, 135, 135, 0.35),
+      inset 0px 5px 8px rgba(215, 215, 215, 0.3),
+      inset 0px -2px 4px rgba(135, 135, 135, 0.65),
+      inset 0px -6px 6px rgba(215, 215, 215, 0.55);
+  }
+  .file_shadow {
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.12),
+      0px 2px 10px rgba(0, 0, 0, 0.08),
+      inset 0px -2px 4px rgba(215, 215, 215, 0.5);
+  }
+  .file_checked_status {
+    background: linear-gradient(
+      180deg,
+      rgba(183, 236, 93, 0) 0%,
+      rgba(183, 236, 93, 0.1) 86.46%,
+      rgba(183, 236, 93, 0.3) 100%
+    );
+    box-shadow: 0 0 6px 0 #b7ec5d, 0 0 4px 0 #648d1e;
+  }
+  .task_shadow {
+    box-shadow: 0px 2px 8px 0px #d7d7d766, 0px 1px 5px 0px #b3b3b366,
+      inset 0px -6px 6px 0px #d7d7d733, inset 0px -2px 3px 0px #b3b3b399,
+      inset 0px 2px 5px 0px #d7d7d729;
+  }
+}
+/* peer-checked:rounded-[20px] peer-checked:border-primary-dark peer-checked:ring-4 peer-checked:ring-primary/30 */
