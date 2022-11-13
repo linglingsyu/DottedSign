@@ -1,5 +1,7 @@
 <template>
-  <section>
+  <section
+    class="content_shadow relative z-10 -mt-px flex grow flex-col rounded-20 bg-white p-2 md:py-10 md:px-8 lg:mt-0 lg:-ml-px"
+  >
     <div class="relative">
       <h2
         class="mx-4 mb-1 text-t20 font-medium leading-7 tracking-tighter text-secondary lg:mb-4 lg:text-[32px] lg:leading-10"
@@ -32,7 +34,7 @@
           type="text"
           class="mr-2 grow tracking-wider focus:outline-none"
           placeholder="請輸入關鍵字"
-          v-model="keyword"
+          v-model.trim="keyword"
           @input="searchHandler"
         />
       </label>
@@ -65,7 +67,7 @@
           v-if="nowShow === 'item'"
         >
           <li
-            class="rounded-[20px] bg-white lg:basis-1/3 lg:px-4 lg:py-3"
+            class="rounded-20 bg-white lg:basis-1/3 lg:px-4 lg:py-3"
             v-for="item of SearchData"
             :key="item.id"
           >
@@ -85,7 +87,10 @@
                 :src="item.url"
                 alt=""
               />
-              <h3 class="mb-1 text-secondary">{{ item.name }}</h3>
+              <h3
+                class="mb-1 text-secondary"
+                v-html="highlightText(item.name)"
+              ></h3>
               <span class="text-gray40">{{ item.Date }}</span>
               <div
                 class="absolute right-3 top-4 lg:hidden"
@@ -118,7 +123,7 @@
           v-if="nowShow === 'list'"
         >
           <li
-            class="task_shadow rounded-[20px] border border-secondary-light p-4"
+            class="task_shadow rounded-20 border border-secondary-light p-4"
             v-for="item of SearchData"
             :key="item.id"
           >
@@ -220,15 +225,26 @@ export default {
         this.nowShow = 'item'
       }
     },
+    highlightText(text) {
+      return text.replaceAll(
+        this.keyword.toLocaleLowerCase(),
+        `<span class="text-primary">${this.keyword}</span>`
+      )
+    },
   },
   computed: {
     SearchData() {
-      if (this.keyword.length === 0) {
+      let keyword = this.keyword
+      if (keyword.length === 0) {
         return this.filedata
       } else {
-        return this.filedata.filter(
-          (item) => item.name.indexOf(this.keyword) !== -1
+        keyword = keyword.toLowerCase()
+        const data = this.filedata.filter(
+          (item) => item.name.toLowerCase().indexOf(keyword) !== -1
         )
+        // for (let item of data) {
+        // }
+        return data
       }
     },
   },

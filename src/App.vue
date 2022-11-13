@@ -4,6 +4,7 @@
     class="container flex h-full min-h-[650px] flex-col py-[18px] pt-2 lg:min-h-[850px] lg:flex-row lg:pt-10 lg:pb-20"
   >
     <nav
+      v-if="this.path.includes(this.$route.name)"
       class="ml-[30px] flex gap-1 lg:mt-[100px] lg:ml-3 lg:flex-col lg:gap-[10px]"
     >
       <div class="h-[42px] w-12 lg:-rotate-90">
@@ -28,11 +29,11 @@
         ></router-link>
       </div>
     </nav>
-    <div
-      class="content_shadow relative z-10 -mt-px flex grow flex-col rounded-[20px] bg-white p-2 md:py-10 md:px-8 lg:mt-0 lg:-ml-px"
-    >
-      <RouterView />
-    </div>
+    <!-- <div
+      class="content_shadow relative z-10 -mt-px flex grow flex-col rounded-20 bg-white p-2 md:py-10 md:px-8 lg:mt-0 lg:-ml-px"
+    > -->
+    <RouterView />
+    <!-- </div> -->
   </main>
 </template>
 <script>
@@ -42,6 +43,11 @@ import IconFiles from '@/components/icons/IconFiles.vue'
 import IconStorage from '@/components/icons/IconStorage.vue'
 import IconTrash from '@/components/icons/IconTrash.vue'
 export default {
+  data() {
+    return {
+      path: ['home', 'files', 'storage', 'deleted'],
+    }
+  },
   components: {
     HeaderC,
     IconFiles,

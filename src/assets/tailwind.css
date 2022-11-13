@@ -37,5 +37,45 @@
       inset 0px -6px 6px 0px #d7d7d733, inset 0px -2px 3px 0px #b3b3b399,
       inset 0px 2px 5px 0px #d7d7d729;
   }
+  .upload_border {
+    background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='20' ry='20' stroke='%234D4D4DFF' stroke-width='1' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='butt'/%3e%3c/svg%3e");
+    border-radius: 20px;
+  }
+  .modal {
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 11;
+  }
+  .modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 100%;
+    max-width: 530px;
+  }
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+  }
+  .close:hover,
+  .close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .modal_shadow {
+    box-shadow: 0px 4px 15px 0px #00000033, 0px -6px 6px 0px #d7d7d766 inset,
+      0px -1px 4px 0px #87878799 inset, 0px 3px 10px 0px #d7d7d733 inset,
+      0px 2px 5px 0px #87878733 inset;
+  }
 }
-/* peer-checked:rounded-[20px] peer-checked:border-primary-dark peer-checked:ring-4 peer-checked:ring-primary/30 */
