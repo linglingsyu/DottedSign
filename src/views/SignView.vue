@@ -41,46 +41,98 @@
   <div
     class="content_shadow relative z-10 -mt-px flex grow flex-col rounded-20 bg-white p-5 md:py-10 md:px-8 lg:mt-0 lg:-ml-px"
   >
-    <div class="relative mb-5">
-      <h2
-        class="mx-4 mb-1 text-center text-t20 font-medium leading-7 tracking-tighter text-secondary lg:mb-4 lg:text-[32px] lg:leading-10"
+    <div v-if="step === 1">
+      <div
+        v-if="UploadStatus"
+        class="absolute -top-3 left-1/2 flex w-[calc(100%-56px)] -translate-x-1/2 -translate-y-full items-center justify-between rounded-[50px] border-2 border-primary text-white lg:top-0 lg:w-1/3 lg:-translate-y-1/2"
+        :class="[fileStatus ? 'bg-[#648d1ee6]' : 'bg-[#f93819e6]']"
       >
-        上傳檔案
-      </h2>
-      <IconLine class="w-full"></IconLine>
-    </div>
-    <div
-      @drop.prevent="drop"
-      @dragover.prevent="checkDrop"
-      @dragleave.prevent="DropEnd"
-      class="relative flex h-full grow flex-col flex-wrap items-center justify-center rounded-20 border border-dashed border-secondary p-4"
-    >
-      <IconImgPhoto class="mb-5"></IconImgPhoto>
-      <label
-        class="mb-[30px] rounded-20 bg-secondary-dark py-2 px-7 text-primary ring-2 ring-primary hover:cursor-pointer"
-        for="upload"
+        <span class="ml-6">{{
+          fileStatus ? '檔案上傳成功' : '檔案上傳失敗'
+        }}</span>
+        <IconCancel
+          class="self-end hover:cursor-pointer"
+          @click="UploadStatus = !UploadStatus"
+        ></IconCancel>
+      </div>
+      <div class="relative mb-5">
+        <h2
+          class="mx-4 mb-1 text-center text-t20 font-medium leading-7 tracking-tighter text-secondary lg:mb-4 lg:text-[32px] lg:leading-10"
+        >
+          上傳檔案
+        </h2>
+        <IconLine class="w-full hover:cursor-pointer"></IconLine>
+      </div>
+      <div
+        v-if="!fileStatus"
+        @drop.prevent="drop"
+        @dragover.prevent="checkDrop"
+        @dragleave.prevent="DropEnd"
+        class="flex h-full grow flex-col flex-wrap items-center justify-center rounded-20 border border-dashed border-secondary p-4"
       >
-        選擇檔案
-      </label>
-      <input
-        hidden
-        type="file"
-        id="upload"
-        ref="uploadFile"
-        @change="onFileChange"
-        accept=".pdf,.jpg,.png"
-      />
-      <p class="text-center font-medium tracking-wider text-gray40">
-        僅支援 PDF、JPG、PNG 檔案，且容量不超過 20MB。
-      </p>
-      <transition>
+        <IconImgPhoto class="mb-5"></IconImgPhoto>
+        <label
+          class="mb-[30px] rounded-20 bg-secondary-dark py-2 px-7 text-primary ring-2 ring-primary hover:cursor-pointer"
+          for="upload"
+        >
+          選擇檔案
+        </label>
+        <input
+          hidden
+          type="file"
+          id="upload"
+          ref="uploadFile"
+          @change="onFileChange"
+          accept=".pdf,.jpg,.png"
+        />
+        <p class="text-center font-medium tracking-wider text-gray40">
+          僅支援 PDF、JPG、PNG 檔案，且容量不超過 20MB。
+        </p>
+        <transition>
+          <div
+            v-show="isDrag"
+            class="absolute top-0 left-0 bottom-0 right-0 rounded-20 bg-black/10"
+          ></div>
+        </transition>
+      </div>
+      <div
+        v-else
+        class="flex flex-col items-center justify-center font-medium tracking-wider text-secondary"
+      >
+        <img
+          class="mb-6 w-full lg:w-[238px]"
+          src="@/assets/images/contract.jpg"
+          alt="contract.jpg"
+        />
+        <span class="mb-1 text-t24">省腎契約.pdf</span>
+        <span class="mb-10 text-gray40">5頁</span>
+        <div class="mb-2">專案名稱</div>
         <div
-          v-show="isDrag"
-          class="absolute top-0 left-0 bottom-0 right-0 rounded-20 bg-black/10"
-        ></div>
-      </transition>
+          class="mx-auto flex w-full justify-between rounded-[40px] py-2 px-6 ring ring-secondary-dark lg:w-[400px]"
+        >
+          <input
+            class="grow rounded-20 focus:outline-none"
+            type="text"
+            value="省腎契約"
+          />
+          <IconPencel></IconPencel>
+        </div>
+      </div>
     </div>
-    <div class="mt-5 flex justify-between text-t18 font-bold text-secondary">
+    <div v-else-if="step === 2">
+      <div class="relative mb-5">
+        <h2
+          class="mx-4 mb-1 text-center text-t20 font-medium leading-7 tracking-tighter text-secondary lg:mb-4 lg:text-[32px] lg:leading-10"
+        >
+          簽署文件
+        </h2>
+        <IconLine class="w-full hover:cursor-pointer"></IconLine>
+      </div>
+    </div>
+
+    <div
+      class="mt-5 flex justify-between text-t18 font-bold text-secondary lg:absolute lg:left-8 lg:right-8 lg:-translate-y-1/2"
+    >
       <button
         class="rounded-20 bg-white py-2 px-7 tracking-wider ring-2 ring-white"
         @click="modalActive = true"
@@ -88,8 +140,12 @@
         上一步
       </button>
       <button
-        class="rounded-20 bg-white py-2 px-7 tracking-wider ring-2 ring-white"
-        :class="[fileStatus ? '' : 'bg-gray20 ring-gray30 ']"
+        class="rounded-20 py-2 px-7 tracking-wider ring-2 hover:cursor-pointer"
+        :class="[
+          fileStatus
+            ? 'bg-secondary-dark text-primary ring-primary'
+            : 'bg-gray20 text-gray50 ring-gray30',
+        ]"
       >
         下一步
       </button>
@@ -100,12 +156,16 @@
 <script>
 import IconLine from '../components/icons/IconLine.vue'
 import IconImgPhoto from '../components/icons/IconImgPhoto.vue'
+import IconPencel from '../components/icons/IconPencel.vue'
+import IconCancel from '../components/icons/IconCancel.vue'
 
 import Modal from '../components/Modal.vue'
 
 export default {
   data() {
     return {
+      step: 1,
+      UploadStatus: false, // 上傳是否完成狀態
       fileStatus: false,
       modalActive: false,
       isDrag: false,
@@ -160,6 +220,8 @@ export default {
   components: {
     IconLine,
     IconImgPhoto,
+    IconPencel,
+    IconCancel,
     Modal,
   },
 }
