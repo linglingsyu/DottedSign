@@ -50,7 +50,10 @@
       <IconLine class="w-full"></IconLine>
     </div>
     <div
-      class="flex h-full grow flex-col flex-wrap items-center justify-center rounded-20 border border-dashed border-secondary p-4"
+      @drop.prevent="drop"
+      @dragover.prevent="checkDrop"
+      @dragleave.prevent="DropEnd"
+      class="relative flex h-full grow flex-col flex-wrap items-center justify-center rounded-20 border border-dashed border-secondary p-4"
     >
       <IconImgPhoto class="mb-5"></IconImgPhoto>
       <label
@@ -59,10 +62,23 @@
       >
         選擇檔案
       </label>
-      <input hidden type="file" id="upload" @change="onFileChange" />
+      <input
+        hidden
+        type="file"
+        id="upload"
+        ref="uploadFile"
+        @change="onFileChange"
+        accept=".pdf,.jpg,.png"
+      />
       <p class="text-center font-medium tracking-wider text-gray40">
         僅支援 PDF、JPG、PNG 檔案，且容量不超過 20MB。
       </p>
+      <transition>
+        <div
+          v-show="isDrag"
+          class="absolute top-0 left-0 bottom-0 right-0 rounded-20 bg-black/10"
+        ></div>
+      </transition>
     </div>
     <div class="mt-5 flex justify-between text-t18 font-bold text-secondary">
       <button
@@ -92,14 +108,52 @@ export default {
     return {
       fileStatus: false,
       modalActive: false,
+      isDrag: false,
+      filelist: null,
+      uploadLimit: {
+        type: [
+          'pdf',
+          'image/jpeg',
+          'image/jpg',
+          'image/png',
+          'application/pdf',
+        ],
+        size: 20 * 1024,
+      },
+      errorText: [],
     }
   },
   methods: {
-    onFileChange(e) {
-      const files = e.target.files || e.dataTransfer.files
-      console.log(files)
-      if (!files.length) return false
-      this.fileStatus = true
+    onFileChange() {
+      this.filelist = [...this.$refs.uploadFile.files]
+      if (this.filelist.length > 0) {
+        const file = this.filelist[0]
+        if (!this.uploadLimit.type.includes(file.type)) {
+          this.errorText.push('僅支援 PDF、JPG、PNG 檔案')
+        } else if (file.size > this.uploadLimit.size) {
+          this.errorText.push('容量不可超過 20MB')
+        }
+        this.fileStatus = true
+      }
+    },
+    checkDrop(e) {
+      e.preventDefault()
+      // console.dir(e)
+      // console.log(e.dataTransfer.files)
+      this.isDrag = true
+    },
+    DropEnd(e) {
+      e.preventDefault()
+      // console.dir(e)
+      // console.log(e.dataTransfer.files)
+      this.isDrag = false
+    },
+    drop(e) {
+      e.preventDefault()
+      // console.log(e.dataTransfer.files)
+      this.$refs.uploadFile.files = e.dataTransfer.files
+      this.isDrag = false
+      this.onFileChange()
     },
   },
   computed: {},
