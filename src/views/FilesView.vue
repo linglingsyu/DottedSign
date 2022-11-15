@@ -19,7 +19,7 @@
       v-if="filedata.length === 0"
       class="flex grow flex-col items-center justify-center gap-5 text-secondary"
     >
-      <input hidden type="file" id="uploadFile" />
+      <!-- <input hidden type="file" id="uploadFile" /> -->
       <label for="uploadFile"
         ><IconAddFile class="h-20 w-20 lg:h-auto lg:w-auto"></IconAddFile
       ></label>

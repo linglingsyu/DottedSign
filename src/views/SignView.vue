@@ -41,7 +41,7 @@
   <div
     class="content_shadow relative z-10 -mt-px flex grow flex-col rounded-20 bg-white p-5 md:py-10 md:px-8 lg:mt-0 lg:-ml-px"
   >
-    <div v-if="step === 1">
+    <div class="flex grow flex-col" v-if="step === 1">
       <div
         v-if="UploadStatus"
         class="absolute -top-3 left-1/2 flex w-[calc(100%-56px)] -translate-x-1/2 -translate-y-full items-center justify-between rounded-[50px] border-2 border-primary text-white lg:top-0 lg:w-1/3 lg:-translate-y-1/2"
@@ -68,7 +68,7 @@
         @drop.prevent="drop"
         @dragover.prevent="checkDrop"
         @dragleave.prevent="DropEnd"
-        class="flex h-full grow flex-col flex-wrap items-center justify-center rounded-20 border border-dashed border-secondary p-4"
+        class="relative flex h-full grow flex-col flex-wrap items-center justify-center rounded-20 border border-dashed border-secondary p-4"
       >
         <IconImgPhoto class="mb-5"></IconImgPhoto>
         <label
@@ -119,8 +119,11 @@
         </div>
       </div>
     </div>
-    <div v-else-if="step === 2">
-      <div class="relative mb-5">
+    <div
+      class="flex grow flex-col tracking-wider text-secondary"
+      v-else-if="step === 2"
+    >
+      <div class="relative">
         <h2
           class="mx-4 mb-1 text-center text-t20 font-medium leading-7 tracking-tighter text-secondary lg:mb-4 lg:text-[32px] lg:leading-10"
         >
@@ -128,6 +131,119 @@
         </h2>
         <IconLine class="w-full hover:cursor-pointer"></IconLine>
       </div>
+      <div class="flex grow font-medium">
+        <div class="basis-3/12">
+          <div
+            class="flex h-full flex-col bg-[url(@/assets/images/line.svg)] bg-right-top bg-no-repeat pr-5 pt-5"
+          >
+            <ul class="mb-4 flex items-center justify-around">
+              <li class="flex flex-col items-center justify-center">
+                <IconSign class="stroke-[#4d4d4d]"></IconSign>
+                簽名
+              </li>
+              <li class="flex flex-col items-center justify-center">
+                <IconImage class="stroke-[#4d4d4d]"></IconImage>圖片
+              </li>
+              <li class="flex flex-col items-center justify-center">
+                <IconText class="stroke-[#4d4d4d]"></IconText>文字
+              </li>
+              <li class="flex flex-col items-center justify-center">
+                <IconPage class="stroke-[#4d4d4d]"></IconPage>頁數
+              </li>
+            </ul>
+            <div
+              class="flex grow flex-col items-center justify-center rounded-20 bg-secondary-light"
+              @click="SignModal = true"
+            >
+              <ul class="flex flex-col items-center justify-center gap-3 p-5">
+                <li
+                  v-for="(item, index) of SignImageList"
+                  :key="'sing' + index"
+                >
+                  <img
+                    class="w-full rounded-20 bg-white object-cover"
+                    :src="item"
+                    alt="sign.png"
+                  />
+                </li>
+              </ul>
+              <IconAddFile
+                class="mb-4 h-20 w-20 lg:h-auto lg:w-auto"
+              ></IconAddFile>
+              <span class="text-t24">新增簽名檔</span>
+            </div>
+          </div>
+        </div>
+        <div class="basis-9/12 py-6 px-28">
+          <div class="h-full w-full bg-gray30 py-10 px-16">
+            <img src="../assets/images/contract.jpg" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 繪製簽名區 -->
+      <transition>
+        <div
+          v-show="SignModal"
+          class="fixed top-0 bottom-0 left-0 right-0 z-20 flex items-center justify-center bg-[#222222]/[.2]"
+        >
+          <div class="w-1/2 rounded-[40px] bg-white py-6 px-8">
+            <h2 class="mb-4 text-center text-t24">建立簽名檔</h2>
+            <IconLine class="w-full"></IconLine>
+            <ul class="mt-10 mb-3 flex items-center justify-center gap-4">
+              <li @click="changeColor" class="hover:cursor-pointer">
+                <IconSignGreen></IconSignGreen>
+              </li>
+              <li class="hover:cursor-pointer">
+                <IconSignBlue></IconSignBlue>
+              </li>
+              <li class="hover:cursor-pointer"><IconSignRed></IconSignRed></li>
+              <li class="hover:cursor-pointer" @click="reset">
+                <IconTrash class="stroke-secondary"></IconTrash>
+              </li>
+            </ul>
+
+            <canvas
+              width="300"
+              height="300"
+              class="mx-auto rounded-20 border-2 border-gray30 bg-secondary-light"
+              ref="sign"
+              @mousedown="startPosition"
+              @mouseup="finishedPosition"
+              @mouseleave="finishedPosition"
+              @mousemove="draw"
+              @touchstart="startPosition"
+              @touchend="finishedPosition"
+              @touchcancel="finishedPosition"
+              @touchmove="draw"
+            ></canvas>
+
+            <div
+              class="mt-5 flex justify-between text-t18 font-bold text-secondary"
+            >
+              <button
+                class="rounded-20 bg-white py-2 px-7 tracking-wider ring-2 ring-white"
+                @click="SignModal = false"
+              >
+                取消
+              </button>
+              <button
+                class="rounded-20 py-2 px-7 tracking-wider ring-2"
+                @click="saveSignImage"
+                :disabled="!saveSign"
+                :class="[
+                  saveSign
+                    ? 'bg-secondary-dark text-primary ring-primary'
+                    : 'bg-gray20 text-gray50 ring-gray30',
+                ]"
+              >
+                確定
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+      <!-- 繪製簽名end -->
     </div>
 
     <div
@@ -135,7 +251,6 @@
     >
       <button
         class="rounded-20 bg-white py-2 px-7 tracking-wider ring-2 ring-white"
-        @click="modalActive = true"
       >
         上一步
       </button>
@@ -158,18 +273,29 @@ import IconLine from '../components/icons/IconLine.vue'
 import IconImgPhoto from '../components/icons/IconImgPhoto.vue'
 import IconPencel from '../components/icons/IconPencel.vue'
 import IconCancel from '../components/icons/IconCancel.vue'
+import IconAddFile from '../components/icons/IconAddFile.vue'
+import IconSign from '../components/icons/IconSign.vue'
+import IconImage from '../components/icons/IconImage.vue'
+import IconText from '../components/icons/IconText.vue'
+import IconPage from '../components/icons/IconPage.vue'
+import IconSignBlue from '../components/icons/IconSignBlue.vue'
+import IconSignRed from '../components/icons/IconSignRed.vue'
+import IconSignGreen from '../components/icons/IconSignGreen.vue'
+import IconTrash from '../components/icons/IconTrash.vue'
 
 import Modal from '../components/Modal.vue'
 
 export default {
   data() {
     return {
-      step: 1,
+      SignModal: false,
+      step: 2,
       UploadStatus: false, // 上傳是否完成狀態
       fileStatus: false,
       modalActive: false,
       isDrag: false,
       filelist: null,
+      SignImageList: [],
       uploadLimit: {
         type: [
           'pdf',
@@ -181,7 +307,19 @@ export default {
         size: 20 * 1024,
       },
       errorText: [],
+      cvs: null,
+      canvas: {
+        lineWidth: 3,
+        lineCap: 'round',
+        strokeStyle: '#000000',
+      },
+      isPainting: false,
+      saveSign: false,
     }
+  },
+  mounted() {
+    this.initCanvas()
+    this.getSignImage()
   },
   methods: {
     onFileChange() {
@@ -215,6 +353,76 @@ export default {
       this.isDrag = false
       this.onFileChange()
     },
+    initCanvas() {
+      this.cvs = this.$refs.sign.getContext('2d')
+      console.log(this.cvs)
+      for (const [key, val] of Object.entries(this.canvas)) {
+        this.cvs[key] = val
+      }
+    },
+    //取得滑鼠 / 手指在畫布上的位置
+    getPaintPosition(e) {
+      const cvsSize = this.$refs.sign.getBoundingClientRect()
+      if (e.type === 'mousemove') {
+        return {
+          x: e.clientX - cvsSize.left,
+          y: e.clientY - cvsSize.top,
+        }
+      } else {
+        return {
+          x: e.touches[0].clientX - cvsSize.left,
+          y: e.touches[0].clientY - cvsSize.top,
+        }
+      }
+    },
+    startPosition(e) {
+      //設定開始繪圖狀態
+      e.preventDefault()
+      this.isPainting = true
+      this.saveSign = true
+    },
+    finishedPosition() {
+      // 結束繪圖，並產生新路徑
+      this.isPainting = false
+      this.cvs.beginPath()
+    },
+    draw(e) {
+      // 開始簽名
+      if (!this.isPainting) return false
+      // 取得滑鼠 在畫布上的 XY軸
+      const PaintPosition = this.getPaintPosition(e)
+      console.log(this.$refs.sign.toDataURL('image/png'))
+      // 移動滑鼠位置並產生圖案
+      this.cvs.lineTo(PaintPosition.x, PaintPosition.y)
+      this.cvs.stroke()
+    },
+    reset() {
+      this.cvs.clearRect(0, 0, this.$refs.sign.width, this.$refs.sign.height)
+      this.saveSign = false
+    },
+    saveSignImage() {
+      const newImg = this.$refs.sign.toDataURL('image/png')
+      let list = localStorage.getItem('sign')
+      if (list === null) {
+        list = []
+      } else {
+        list = JSON.parse(list)
+      }
+      list.push(newImg)
+      list = JSON.stringify(list)
+      localStorage.setItem('sign', list)
+      this.reset()
+      this.getSignImage()
+    },
+    getSignImage() {
+      this.SignImageList = JSON.parse(localStorage.getItem('sign'))
+    },
+    changeColor(color) {
+      // this.initCanvas()
+      this.cvs.strokeStyle = color
+      this.cvs.fillStyle = color
+      console.log(this.cvs)
+    },
   },
   computed: {},
   components: {
@@ -222,6 +430,15 @@ export default {
     IconImgPhoto,
     IconPencel,
     IconCancel,
+    IconAddFile,
+    IconSign,
+    IconImage,
+    IconText,
+    IconPage,
+    IconSignBlue,
+    IconSignRed,
+    IconSignGreen,
+    IconTrash,
     Modal,
   },
 }

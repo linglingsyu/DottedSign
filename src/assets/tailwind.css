@@ -73,9 +73,4 @@
     cursor: pointer;
   }
 
-  .modal_shadow {
-    box-shadow: 0px 4px 15px 0px #00000033, 0px -6px 6px 0px #d7d7d766 inset,
-      0px -1px 4px 0px #87878799 inset, 0px 3px 10px 0px #d7d7d733 inset,
-      0px 2px 5px 0px #87878733 inset;
-  }
 }
