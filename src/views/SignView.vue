@@ -293,6 +293,8 @@ import IconTrash from '../components/icons/IconTrash.vue'
 import Modal from '../components/Modal.vue'
 
 import { fabric } from 'fabric'
+import * as PdfJs from 'pdfjs-dist'
+import * as pdfjsLib from 'pdfjs-dist'
 
 export default {
   data() {
@@ -325,11 +327,14 @@ export default {
       },
       isPainting: false,
       saveSign: false,
+      pdfDoc: null,
+      pdfPages: null,
     }
   },
   mounted() {
     this.initCanvas()
     this.getSignImage()
+    this.loadFile('a')
   },
   methods: {
     onFileChange() {
@@ -366,13 +371,6 @@ export default {
     initCanvas() {
       const ref = this.$refs.can
       this.cv = new fabric.Canvas(ref)
-      const rect = new fabric.Rect({
-        fill: 'red',
-        width: 20,
-        height: 20,
-      })
-      console.log(this.cv)
-      this.cv.add(rect)
 
       // 初始化 簽名(原生canvas)
       this.cvs = this.$refs.sign.getContext('2d')
@@ -462,6 +460,109 @@ export default {
         image.scaleX = 0.5
         image.scaleY = 0.5
         that.cv.add(image)
+      })
+    },
+    loadFile(url) {
+      // PdfJs.GlobalWorkerOptions.workerSrc = require('pdfjs-dist/build/pdf.worker.entry')
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        '../../node_modules/pdfjs-dist/build/pdf.worker.js'
+      url = '/public/upload/contract.pdf'
+      const loadingTask = pdfjsLib.getDocument(url)
+      // console.log(loadingTask)
+      loadingTask.promise.then((doc) => {
+        // console.log(doc)
+        doc.getPage(1).then((page) => {
+          console.log(page)
+          // 設定 PDF 內容的顯示比例
+          const viewport = page.getViewport({ scale: 1 })
+          // const ctx = this.$refs.can.getContext('2d')
+          // 設定 canvas 的大小與 PDF 相等
+          this.$refs.can.width = viewport.width
+          this.$refs.can.height = viewport.height
+
+          //實際渲染 PDF
+          // page.render({
+          //   canvasContext: ctx,
+          //   viewport: viewport,
+          // })
+        })
+        this.pdfDoc = doc
+        this.pdfPages = this.pdfDoc.numPages
+        // this.$nextTick(() => {
+        //   this.renderPage(1) // 将pdf文件内容渲染到canvas，
+        // })
+      })
+    },
+    renderPage(num) {
+      this.pdfDoc.getPage(num).then((page) => {
+        const canvas = document.getElementById('pdf-canvas') // 获取页面中的canvas元素
+        // 以下canvas的使用过程
+        const ctx = canvas.getContext('2d')
+        const dpr = window.devicePixelRatio || 1
+        const bsr =
+          ctx.webkitBackingStorePixelRatio ||
+          ctx.mozBackingStorePixelRatio ||
+          ctx.msBackingStorePixelRatio ||
+          ctx.oBackingStorePixelRatio ||
+          ctx.backingStorePixelRatio ||
+          1
+        const ratio = dpr / bsr
+        const viewport = page.getViewport({ scale: this.pdfScale }) // 设置pdf文件显示比例
+        canvas.width = viewport.width * ratio
+        canvas.height = viewport.height * ratio
+        canvas.style.width = viewport.width + 'px'
+        canvas.style.height = viewport.height + 'px'
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0) // 设置当pdf文件处于缩小或放大状态时，可以拖动
+        const renderContext = {
+          canvasContext: ctx,
+          viewport: viewport,
+        }
+        // 将pdf文件的内容渲染到canvas中
+        page.render(renderContext)
+      })
+    },
+    // 使用原生 FileReader 轉檔
+    readBlob(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.addEventListener('load', () => resolve(reader.result))
+        reader.addEventListener('error', reject)
+        reader.readAsDataURL(blob)
+      })
+    },
+    async printPDF(pdfData) {
+      // 將檔案處理成 base64
+      pdfData = await this.readBlob(pdfData)
+
+      // 將 base64 中的前綴刪去，並進行解碼
+      const data = atob(
+        pdfData.substring('data:application/pdf;base64,'.length)
+      )
+      // 利用解碼的檔案，載入 PDF 檔及第一頁
+      const pdfDoc = await pdfjsLib.getDocument({ data }).promise
+      const pdfPage = await pdfDoc.getPage(1)
+      // 設定尺寸及產生 canvas
+      const viewport = pdfPage.getViewport({ scale: window.devicePixelRatio })
+      const context = this.$refs.can.getContext('2d')
+      // 設定 PDF 所要顯示的寬高及渲染
+      this.$refs.can.height = viewport.height
+      this.$refs.can.width = viewport.width
+      const renderContext = {
+        canvasContext: context,
+        viewport,
+      }
+      const renderTask = pdfPage.render(renderContext)
+      // 回傳做好的 PDF canvas
+      return renderTask.promise.then(() => this.$refs.can)
+    },
+    async pdfToImage(pdfData) {
+      // 設定 PDF 轉為圖片時的比例
+      const scale = 1 / window.devicePixelRatio
+      // 回傳圖片
+      return new fabric.Image(pdfData, {
+        id: 'renderPDF',
+        scaleX: scale,
+        scaleY: scale,
       })
     },
   },
