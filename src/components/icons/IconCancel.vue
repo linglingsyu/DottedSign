@@ -6,16 +6,14 @@
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <circle cx="20" cy="20" r="10.75" stroke="white" stroke-width="2.5" />
+    <circle cx="20" cy="20" r="10.75" stroke-width="2.5" />
     <path
       d="M16 24L23.7782 16.2218"
-      stroke="white"
       stroke-width="2.5"
       stroke-linecap="round"
     />
     <path
       d="M24 24L16.2218 16.2218"
-      stroke="white"
       stroke-width="2.5"
       stroke-linecap="round"
     />

@@ -51,7 +51,7 @@
           fileStatus ? '檔案上傳成功' : '檔案上傳失敗'
         }}</span>
         <IconCancel
-          class="self-end hover:cursor-pointer"
+          class="self-end stroke-white hover:cursor-pointer"
           @click="UploadStatus = !UploadStatus"
         ></IconCancel>
       </div>
@@ -138,37 +138,43 @@
           >
             <ul class="mb-4 flex items-center justify-around">
               <li class="flex flex-col items-center justify-center">
-                <IconSign class="stroke-[#4d4d4d]"></IconSign>
+                <IconSign class="stroke-secondary"></IconSign>
                 簽名
               </li>
               <li class="flex flex-col items-center justify-center">
-                <IconImage class="stroke-[#4d4d4d]"></IconImage>圖片
+                <IconImage class="stroke-secondary"></IconImage>圖片
               </li>
               <li class="flex flex-col items-center justify-center">
-                <IconText class="stroke-[#4d4d4d]"></IconText>文字
+                <IconText class="stroke-secondary"></IconText>文字
               </li>
               <li class="flex flex-col items-center justify-center">
-                <IconPage class="stroke-[#4d4d4d]"></IconPage>頁數
+                <IconPage class="stroke-secondary"></IconPage>頁數
               </li>
             </ul>
             <div
               class="flex grow flex-col items-center justify-center rounded-20 bg-secondary-light"
-              @click="SignModal = true"
             >
               <ul class="flex flex-col items-center justify-center gap-3 p-5">
                 <li
                   v-for="(item, index) of SignImageList"
                   :key="'sing' + index"
+                  class="group relative hover:rounded-20 hover:ring-2 hover:ring-primary"
                 >
                   <img
-                    class="w-full rounded-20 bg-white object-cover"
+                    class="w-full rounded-20 bg-white object-cover group-hover:bg-primary/70"
                     :src="item"
+                    @click="setImageonPage"
                     alt="sign.png"
                   />
+                  <IconCancel
+                    class="absolute top-0 left-0 stroke-secondary hover:cursor-pointer"
+                    @click="delImage(index)"
+                  ></IconCancel>
                 </li>
               </ul>
               <IconAddFile
-                class="mb-4 h-20 w-20 lg:h-auto lg:w-auto"
+                @click="SignModal = true"
+                class="mb-4 h-20 w-20 hover:cursor-pointer lg:h-auto lg:w-auto"
               ></IconAddFile>
               <span class="text-t24">新增簽名檔</span>
             </div>
@@ -176,7 +182,8 @@
         </div>
         <div class="basis-9/12 py-6 px-28">
           <div class="h-full w-full bg-gray30 py-10 px-16">
-            <img src="../assets/images/contract.jpg" />
+            <!-- <img src="../assets/images/contract.jpg" /> -->
+            <canvas ref="can" width="800" height="800"></canvas>
           </div>
         </div>
       </div>
@@ -285,6 +292,8 @@ import IconTrash from '../components/icons/IconTrash.vue'
 
 import Modal from '../components/Modal.vue'
 
+import { fabric } from 'fabric'
+
 export default {
   data() {
     return {
@@ -307,6 +316,7 @@ export default {
         size: 20 * 1024,
       },
       errorText: [],
+      cv: null,
       cvs: null,
       canvas: {
         lineWidth: 3,
@@ -354,6 +364,17 @@ export default {
       this.onFileChange()
     },
     initCanvas() {
+      const ref = this.$refs.can
+      this.cv = new fabric.Canvas(ref)
+      const rect = new fabric.Rect({
+        fill: 'red',
+        width: 20,
+        height: 20,
+      })
+      console.log(this.cv)
+      this.cv.add(rect)
+
+      // 初始化 簽名(原生canvas)
       this.cvs = this.$refs.sign.getContext('2d')
       console.log(this.cvs)
       for (const [key, val] of Object.entries(this.canvas)) {
@@ -422,6 +443,26 @@ export default {
       this.cvs.strokeStyle = color
       this.cvs.fillStyle = color
       console.log(this.cvs)
+    },
+    delImage(index) {
+      if (confirm('確定刪除嗎？')) {
+        this.SignImageList.splice(index, 1)
+        let data = JSON.parse(localStorage.getItem('sign'))
+        data.splice(index, 1)
+        localStorage.setItem('sign', JSON.stringify(data))
+      }
+    },
+    setImageonPage(e) {
+      // console.log(e.target)
+      if (!e.target.src) return
+      const that = this
+      fabric.Image.fromURL(e.target.src, function (image) {
+        // 設定簽名出現的位置及大小，後續可調整
+        image.top = 200
+        image.scaleX = 0.5
+        image.scaleY = 0.5
+        that.cv.add(image)
+      })
     },
   },
   computed: {},
