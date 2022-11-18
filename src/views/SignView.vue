@@ -41,15 +41,13 @@
   <div
     class="content_shadow relative z-10 -mt-px flex grow flex-col rounded-20 bg-white p-5 md:py-10 md:px-8 lg:mt-0 lg:-ml-px"
   >
-    <div class="flex grow flex-col" v-if="step === 1">
+    <div class="flex grow flex-col" v-show="step === 1">
       <div
         v-if="UploadStatus"
         class="absolute -top-3 left-1/2 flex w-[calc(100%-56px)] -translate-x-1/2 -translate-y-full items-center justify-between rounded-[50px] border-2 border-primary text-white lg:top-0 lg:w-1/3 lg:-translate-y-1/2"
         :class="[fileStatus ? 'bg-[#648d1ee6]' : 'bg-[#f93819e6]']"
       >
-        <span class="ml-6">{{
-          fileStatus ? '檔案上傳成功' : '檔案上傳失敗'
-        }}</span>
+        <span class="ml-6">{{ fileStatus ? '檔案上傳成功' : errorText }}</span>
         <IconCancel
           class="self-end stroke-white hover:cursor-pointer"
           @click="UploadStatus = !UploadStatus"
@@ -121,7 +119,7 @@
     </div>
     <div
       class="flex grow flex-col tracking-wider text-secondary"
-      v-else-if="step === 2"
+      v-show="step === 2"
     >
       <div class="relative">
         <h2
@@ -181,9 +179,9 @@
           </div>
         </div>
         <div class="basis-9/12 py-6 px-28">
-          <div class="h-full w-full bg-gray30 py-10 px-16">
+          <div class="h-full w-full py-10 px-16">
             <!-- <img src="../assets/images/contract.jpg" /> -->
-            <canvas ref="can" width="800" height="800"></canvas>
+            <canvas ref="can" width="600" height="600"></canvas>
           </div>
         </div>
       </div>
@@ -268,6 +266,7 @@
             ? 'bg-secondary-dark text-primary ring-primary'
             : 'bg-gray20 text-gray50 ring-gray30',
         ]"
+        @click="download"
       >
         下一步
       </button>
@@ -293,14 +292,16 @@ import IconTrash from '../components/icons/IconTrash.vue'
 import Modal from '../components/Modal.vue'
 
 import { fabric } from 'fabric'
-import * as PdfJs from 'pdfjs-dist'
+// import * as PdfJs from 'pdfjs-dist'
 import * as pdfjsLib from 'pdfjs-dist'
+import { jsPDF } from 'jspdf'
 
 export default {
   data() {
     return {
+      jsPDF: null,
       SignModal: false,
-      step: 2,
+      step: 1,
       UploadStatus: false, // 上傳是否完成狀態
       fileStatus: false,
       modalActive: false,
@@ -315,9 +316,9 @@ export default {
           'image/png',
           'application/pdf',
         ],
-        size: 20 * 1024,
+        size: 20 * 1024 * 1024,
       },
-      errorText: [],
+      errorText: '',
       cv: null,
       cvs: null,
       canvas: {
@@ -334,19 +335,37 @@ export default {
   mounted() {
     this.initCanvas()
     this.getSignImage()
-    this.loadFile('a')
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      '../../node_modules/pdfjs-dist/build/pdf.worker.js'
+    this.jsPDF = new jsPDF()
   },
   methods: {
-    onFileChange() {
-      this.filelist = [...this.$refs.uploadFile.files]
+    async onFileChange() {
+      // this.filelist = [...this.$refs.uploadFile.files]
+      this.filelist = this.$refs.uploadFile.files
+      console.log(this.filelist)
       if (this.filelist.length > 0) {
         const file = this.filelist[0]
+        this.UploadStatus = true // 打開提示狀態
         if (!this.uploadLimit.type.includes(file.type)) {
-          this.errorText.push('僅支援 PDF、JPG、PNG 檔案')
+          this.errorText = '僅支援 PDF、JPG、PNG 檔案'
         } else if (file.size > this.uploadLimit.size) {
-          this.errorText.push('容量不可超過 20MB')
+          this.errorText = '容量不可超過 20MB'
+        } else {
+          this.step = 2
+          this.fileStatus = true
+          this.cv.requestRenderAll()
+          const pdfData = await this.printPDF(file)
+          // console.log(pdfData)
+          const pdfImage = await this.pdfToImage(pdfData)
+          // console.log(pdfImage)
+          // 透過比例設定 canvas 尺寸
+          this.cv.setWidth(pdfImage.width / window.devicePixelRatio)
+          this.cv.setHeight(pdfImage.height / window.devicePixelRatio)
+
+          // 將 PDF 畫面設定為背景
+          this.cv.setBackgroundImage(pdfImage, this.cv.renderAll.bind(this.cv))
         }
-        this.fileStatus = true
       }
     },
     checkDrop(e) {
@@ -371,10 +390,8 @@ export default {
     initCanvas() {
       const ref = this.$refs.can
       this.cv = new fabric.Canvas(ref)
-
       // 初始化 簽名(原生canvas)
       this.cvs = this.$refs.sign.getContext('2d')
-      console.log(this.cvs)
       for (const [key, val] of Object.entries(this.canvas)) {
         this.cvs[key] = val
       }
@@ -440,7 +457,6 @@ export default {
       // this.initCanvas()
       this.cvs.strokeStyle = color
       this.cvs.fillStyle = color
-      console.log(this.cvs)
     },
     delImage(index) {
       if (confirm('確定刪除嗎？')) {
@@ -454,71 +470,23 @@ export default {
       // console.log(e.target)
       if (!e.target.src) return
       const that = this
+      fabric.Object.prototype.setControlsVisibility({
+        bl: true, // 左下
+        br: true, // 右下
+        mb: false, // 下中
+        ml: false, // 中左
+        mr: false, // 中右
+        mt: false, // 上中
+        tl: true, // 上左
+        tr: true, // 上右
+        mtr: false, // 旋轉控制鍵
+      })
       fabric.Image.fromURL(e.target.src, function (image) {
         // 設定簽名出現的位置及大小，後續可調整
         image.top = 200
         image.scaleX = 0.5
         image.scaleY = 0.5
         that.cv.add(image)
-      })
-    },
-    loadFile(url) {
-      // PdfJs.GlobalWorkerOptions.workerSrc = require('pdfjs-dist/build/pdf.worker.entry')
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        '../../node_modules/pdfjs-dist/build/pdf.worker.js'
-      url = '/public/upload/contract.pdf'
-      const loadingTask = pdfjsLib.getDocument(url)
-      // console.log(loadingTask)
-      loadingTask.promise.then((doc) => {
-        // console.log(doc)
-        doc.getPage(1).then((page) => {
-          console.log(page)
-          // 設定 PDF 內容的顯示比例
-          const viewport = page.getViewport({ scale: 1 })
-          // const ctx = this.$refs.can.getContext('2d')
-          // 設定 canvas 的大小與 PDF 相等
-          this.$refs.can.width = viewport.width
-          this.$refs.can.height = viewport.height
-
-          //實際渲染 PDF
-          // page.render({
-          //   canvasContext: ctx,
-          //   viewport: viewport,
-          // })
-        })
-        this.pdfDoc = doc
-        this.pdfPages = this.pdfDoc.numPages
-        // this.$nextTick(() => {
-        //   this.renderPage(1) // 将pdf文件内容渲染到canvas，
-        // })
-      })
-    },
-    renderPage(num) {
-      this.pdfDoc.getPage(num).then((page) => {
-        const canvas = document.getElementById('pdf-canvas') // 获取页面中的canvas元素
-        // 以下canvas的使用过程
-        const ctx = canvas.getContext('2d')
-        const dpr = window.devicePixelRatio || 1
-        const bsr =
-          ctx.webkitBackingStorePixelRatio ||
-          ctx.mozBackingStorePixelRatio ||
-          ctx.msBackingStorePixelRatio ||
-          ctx.oBackingStorePixelRatio ||
-          ctx.backingStorePixelRatio ||
-          1
-        const ratio = dpr / bsr
-        const viewport = page.getViewport({ scale: this.pdfScale }) // 设置pdf文件显示比例
-        canvas.width = viewport.width * ratio
-        canvas.height = viewport.height * ratio
-        canvas.style.width = viewport.width + 'px'
-        canvas.style.height = viewport.height + 'px'
-        ctx.setTransform(ratio, 0, 0, ratio, 0, 0) // 设置当pdf文件处于缩小或放大状态时，可以拖动
-        const renderContext = {
-          canvasContext: ctx,
-          viewport: viewport,
-        }
-        // 将pdf文件的内容渲染到canvas中
-        page.render(renderContext)
       })
     },
     // 使用原生 FileReader 轉檔
@@ -531,29 +499,30 @@ export default {
       })
     },
     async printPDF(pdfData) {
+      const Base64Prefix = 'data:application/pdf;base64,'
       // 將檔案處理成 base64
       pdfData = await this.readBlob(pdfData)
 
       // 將 base64 中的前綴刪去，並進行解碼
-      const data = atob(
-        pdfData.substring('data:application/pdf;base64,'.length)
-      )
+      const data = atob(pdfData.substring(Base64Prefix.length))
       // 利用解碼的檔案，載入 PDF 檔及第一頁
       const pdfDoc = await pdfjsLib.getDocument({ data }).promise
       const pdfPage = await pdfDoc.getPage(1)
       // 設定尺寸及產生 canvas
+      const canvas = document.createElement('canvas')
+      const context = canvas.getContext('2d')
       const viewport = pdfPage.getViewport({ scale: window.devicePixelRatio })
-      const context = this.$refs.can.getContext('2d')
       // 設定 PDF 所要顯示的寬高及渲染
-      this.$refs.can.height = viewport.height
-      this.$refs.can.width = viewport.width
+
+      canvas.height = viewport.height
+      canvas.width = viewport.width
       const renderContext = {
         canvasContext: context,
         viewport,
       }
       const renderTask = pdfPage.render(renderContext)
       // 回傳做好的 PDF canvas
-      return renderTask.promise.then(() => this.$refs.can)
+      return renderTask.promise.then(() => canvas)
     },
     async pdfToImage(pdfData) {
       // 設定 PDF 轉為圖片時的比例
@@ -564,6 +533,16 @@ export default {
         scaleX: scale,
         scaleY: scale,
       })
+    },
+    download() {
+      // 將 canvas 存為圖片
+      const image = this.$refs.can.toDataURL('image/png')
+      // 設定背景在 PDF 中的位置及大小
+      const width = this.jsPDF.internal.pageSize.width
+      const height = this.jsPDF.internal.pageSize.height
+      this.jsPDF.addImage(image, 'png', 0, 0, width, height)
+      // 將檔案取名並下載
+      this.jsPDF.save('download.pdf')
     },
   },
   computed: {},

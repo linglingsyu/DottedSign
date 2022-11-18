@@ -14,6 +14,7 @@
 	},
 	"dependencies": {
 		"fabric": "^5.2.4",
+		"jspdf": "^2.5.1",
 		"pdfjs-dist": "^3.0.279",
 		"pinia": "^2.0.22",
 		"vue": "^3.2.39",
